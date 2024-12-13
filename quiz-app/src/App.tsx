@@ -9,7 +9,7 @@ const App: React.FC = () => {
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
-        <h1 className="title">IM ABOUT TO QUIZ</h1>
+        <h1 className="title">IM ABOUT TO QUIZ 💦</h1>
         <div className="animated-text">
           {text.split('').map((char, index) => (
             <span

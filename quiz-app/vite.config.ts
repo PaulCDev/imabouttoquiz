@@ -7,4 +7,7 @@ export default defineConfig({
   build: {
     outDir: 'dist', // Output folder
   },
+
+  // Have to comment out if building locally!
+  base: '/imabouttoquiz/',
 });
