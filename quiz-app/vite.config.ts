@@ -9,5 +9,5 @@ export default defineConfig({
   },
 
   // Have to comment out if building locally!
-  base: '/',
+  /*base: '/',*/
 });

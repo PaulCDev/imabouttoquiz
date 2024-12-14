@@ -4,6 +4,8 @@
 /* Set the default font for the app */
 body {
   font-family: 'Poppins', sans-serif;
+  /*font-family: 'Chewy', system-ui;*/
+  /*letter-spacing: .2rem;*/
   margin: 0;
   padding: 0;
   background: linear-gradient(135deg, #ff7eb3, #ff758c, #ff6b68);
@@ -13,43 +15,6 @@ body {
   height: 100vh;
   overflow: hidden;
   color: white;
-}
-
-.container {
-  text-align: center;
-}
-
-.title {
-  font-size: 3rem;
-  font-weight: 700; /* Use the bold font weight for the title */
-  margin-bottom: 20px;
-}
-
-.animated-text {
-  font-size: 2rem;
-  font-weight: 600; /* Use a medium font weight for the animated text */
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes bobbing {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.animated-text {
-  display: inline-flex; /* Ensures proper spacing and alignment */
-}
-
-.animated-text span {
-  display: inline-block;
-  animation: bobbing 1.5s infinite ease-in-out;
-  animation-fill-mode: both; /* Ensure animation effects stay consistent */
-  padding: 0 2px; /* Add space between letters */
-  background: transparent; /* Ensure no blending with the background */
 }
 
 .zigzag-background {
@@ -64,6 +29,57 @@ body {
   animation: pan 10s linear infinite;
   z-index: 0;
   mix-blend-mode: overlay; /* Optional: Adjust for overlay effects */
+  pointer-events: none;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  z-index: 1;
+  position: relative;
+  pointer-events: auto;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 700; /* Use the bold font weight for the title */
+  margin-bottom: 20px;
+}
+
+.title.top {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2.5rem;
+}
+
+.animated-text {
+  font-size: 2rem;
+  font-weight: 600; /* Use a medium font weight for the animated text */
+  animation: pulse 1.5s infinite ease-in-out;
+  display: inline-flex; /* Ensures proper spacing and alignment */
+}
+
+.animated-text span {
+  display: inline-block;
+  animation: bobbing 1.5s infinite ease-in-out;
+  animation-fill-mode: both; /* Ensure animation effects stay consistent */
+  padding: 0 2px; /* Add space between letters */
+  background: transparent; /* Ensure no blending with the background */
+}
+
+@keyframes bobbing {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes pan {
@@ -75,3 +91,104 @@ body {
   }
 }
 
+.play-button {
+  background-color: #ff6b68;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.3s;
+  font-family: 'Poppins', sans-serif;
+  /*letter-spacing: .2rem;*/
+  z-index: 99;
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+  touch-action: manipulation; /* Optimize touch input */
+}
+
+.play-button:hover {
+  transform: scale(1.1);
+  background-color: #69FF98;
+}
+
+.play-button:active {
+  transform: scale(0.95);
+  background-color: #ff5c5c;
+}
+
+.quiz-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.9); /* Light background to make it pop */
+  border-radius: 15px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+}
+
+.question {
+  margin: 20px 0;
+  font-size: 1.5rem;
+  color: #333; /* Darker text for better readability on light background */
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.choice-button {
+  background-color: #ff758c;
+  border: none;
+  color: white;
+  padding: 10px;
+  font-size: 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.3s;
+  z-index: 1;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.choice-button:hover {
+  transform: scale(1.05);
+  background-color: #ff90a6;
+}
+
+.choice-button:hover, .choice-button:focus {
+  outline: none;
+}
+
+.choice-button:active {
+  transform: scale(0.95);
+  background-color: #ff5c78;
+}
+
+.feedback {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: black;
+}
+
+.results-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.results-container p {
+  font-size: 1.5rem;
+  margin-top: 10px;
+}
