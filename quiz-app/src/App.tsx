@@ -7,6 +7,15 @@ interface QuizQuestion {
   choices: { [key: string]: string };
   correct_answer: string;
   difficulty: string;
+};
+
+interface ResultDetail {
+  question: string;
+  selectedAnswer: string;
+  selectedAnswerText: string;
+  correctAnswer: string;
+  correctAnswerText: string;
+  isCorrect: boolean;
 }
 
 const ComingSoonPage = () => {
@@ -15,7 +24,7 @@ const ComingSoonPage = () => {
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
-        <h1 className="title">IM ABOUT TO QUIZ 💦</h1>
+        <h1 className="title">IM ABOUT TO QUIZ</h1>
         <div className="animated-text">
           {text.split('').map((char, index) => (
             <span
@@ -36,7 +45,7 @@ const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void }) => {
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
-        <h1 className="title">IM ABOUT TO QUIZ 💦</h1>
+        <h1 className="title">IM ABOUT TO QUIZ</h1>
         <button 
           type="button"
           className="play-button" 
@@ -52,27 +61,44 @@ const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void }) => {
   );
 };
 
-const QuizPage = ({ quizData, onFinish }: { quizData: QuizQuestion[]; onFinish: (score: number) => void }) => {
+const QuizPage = ({ quizData, onFinish }: { quizData: QuizQuestion[]; onFinish: (results: ResultDetail[]) => void }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
+  const [results, setResults] = useState<ResultDetail[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const currentQuestion = quizData[currentQuestionIndex];
 
   const handleAnswer = (choice: string) => {
-    if (choice === currentQuestion.correct_answer) {
-      setFeedback("Correct!");
-      setScore(score + 1);
-    } else {
-      setFeedback(`Incorrect! The correct answer was ${currentQuestion.correct_answer}.`);
-    }
+    const isCorrect = choice === currentQuestion.correct_answer;
+
+    // Add result to results array
+    setResults((prevResults) => [
+      ...prevResults,
+      {
+        question: currentQuestion.question,
+        selectedAnswer: choice,
+        selectedAnswerText: currentQuestion.choices[choice],
+        correctAnswer: currentQuestion.correct_answer,
+        correctAnswerText: currentQuestion.choices[currentQuestion.correct_answer],
+        isCorrect: isCorrect,
+      },
+    ]);
+
+    setFeedback(isCorrect ? "Correct!" : `Incorrect! The correct answer was ${currentQuestion.choices[currentQuestion.correct_answer]}.`);
 
     setTimeout(() => {
       setFeedback(null);
       if (currentQuestionIndex + 1 < quizData.length) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
-        onFinish(score);
+        onFinish(results.concat({
+          question: currentQuestion.question,
+          selectedAnswer: choice,
+          selectedAnswerText: currentQuestion.choices[choice],
+          correctAnswer: currentQuestion.correct_answer,
+          correctAnswerText: currentQuestion.choices[currentQuestion.correct_answer],
+          isCorrect: isCorrect,
+        }));
       }
     }, 2000);
   };
@@ -98,13 +124,25 @@ const QuizPage = ({ quizData, onFinish }: { quizData: QuizQuestion[]; onFinish: 
   );
 };
 
-const ResultsPage = ({ score, total }: { score: number; total: number }) => {
+const ResultsPage = ({ results }: { results: ResultDetail[] }) => {
+  const score = results.filter((result) => result.isCorrect).length;
   return (
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
-        <h1 className="title">Quiz Results</h1>
-        <p>You scored {score} out of {total}!</p>
+        <h1 className="title">Im About To Quiz Results</h1>
+        <p>You scored {score} out of {results.length}!</p>
+        <div className="results-summary">
+          {results.map((result, index) => (
+            <div key={index} className="result-item">
+              <p><strong>Question:</strong> {result.question}</p>
+              <p><strong>Your Answer:</strong> {result.selectedAnswer} - {result.selectedAnswerText}</p>
+              <p><strong>Correct Answer:</strong> {result.correctAnswer} - {result.correctAnswerText}</p>
+              <p><strong>Result:</strong> {result.isCorrect ? "Correct" : "Incorrect"}</p>
+              <hr />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -114,11 +152,11 @@ const App: React.FC = () => {
   const [isComingSoon, setIsComingSoon] = useState(true);
   const [quizData, setQuizData] = useState<QuizQuestion[] | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const [score, setScore] = useState(0);
+  const [results, setResults] = useState<ResultDetail[]>([]);
 
   const fetchQuiz = async () => {
     try {
-      const response = await fetch('http://192.168.0.6:5000/api/quiz'); // Replace with actual API address
+      const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz'); // Replace with actual API address
       if (!response.ok) {
         throw new Error('Failed to fetch quiz');
       }
@@ -131,8 +169,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleFinish = (finalScore: number) => {
-    setScore(finalScore);
+  const handleFinish = (finalResults: ResultDetail[]) => {
+    setResults(finalResults);
     setShowResults(true);
   };
 
@@ -152,7 +190,7 @@ const App: React.FC = () => {
   }
 
   if (showResults) {
-    return <ResultsPage score={score} total={quizData?.length || 0} />;
+    return <ResultsPage results={results} />;
   }
 
   if (quizData) {
