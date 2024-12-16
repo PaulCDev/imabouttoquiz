@@ -1,20 +1,53 @@
 /* Import the font family */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-/* Set the default font for the app */
+html, body{
+  height: 100%;
+  margin: 0;
+  overflow-y: auto; /* Ensure the entire page supports vertical scrolling */
+}
+
+/* Remove flexbox from the body to allow natural content flow */
 body {
   font-family: 'Poppins', sans-serif;
-  /*font-family: 'Chewy', system-ui;*/
-  /*letter-spacing: .2rem;*/
   margin: 0;
   padding: 0;
   background: linear-gradient(135deg, #ff7eb3, #ff758c, #ff6b68);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  overflow: hidden;
   color: white;
+}
+
+/* Update container to support scrolling and content alignment */
+.container {
+  min-height: 100vh; /* Ensure it covers the full viewport */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Align content to the top */
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Allow scrolling if content overflows */
+}
+
+/* Title screen: ensure everything is perfectly centered */
+.centered-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center vertically */
+  align-items: center; /* Center horizontally */
+  height: 100vh;
+  text-align: center;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 20px 0;
+}
+
+.title.top {
+  position: relative;
+  top: 0;
+  transform: none;
 }
 
 .zigzag-background {
@@ -40,32 +73,6 @@ body {
   100% {
     background-position: 200px 0px; /* Match the gradient repeat size */
   }
-}
-
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  height: 100%;
-  z-index: 1;
-  position: relative;
-  pointer-events: auto;
-}
-
-.title {
-  font-size: 3rem;
-  font-weight: 700; /* Use the bold font weight for the title */
-  margin-bottom: 20px;
-}
-
-.title.top {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2.5rem;
 }
 
 .animated-text {
@@ -102,7 +109,8 @@ body {
   cursor: pointer;
   transition: transform 0.2s, background-color 0.3s;
   font-family: 'Poppins', sans-serif;
-  /*letter-spacing: .2rem;*/
+  max-width: 200px; /* Limit button width */
+  width: auto; /* Prevent full width */
   z-index: 99;
   -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
   touch-action: manipulation; /* Optimize touch input */
@@ -127,15 +135,19 @@ body {
   padding: 20px;
   max-width: 600px;
   margin: 0 auto;
-  background-color: rgba(255, 255, 255, 0.8); /* Light background to make it pop */
-  border-radius: 15px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  
 }
 
 .question {
   margin: 20px 0;
   font-size: 1.5rem;
   color: #333; /* Darker text for better readability on light background */
+
+  background-color: rgba(255, 255, 255, 0.8); /* Light background to make it pop */
+  border-radius: 15px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .choices {
@@ -166,6 +178,7 @@ body {
 
 .choice-button:hover, .choice-button:focus {
   outline: none;
+  box-shadow: none; /* Removes any highlight effects */
 }
 
 .choice-button:active {

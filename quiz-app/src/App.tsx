@@ -44,7 +44,7 @@ const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void }) => {
   return (
     <div>
       <div className="zigzag-background"></div>
-      <div className="container">
+      <div className="centered-container">
         <h1 className="title">IM ABOUT TO QUIZ</h1>
         <button 
           type="button"
@@ -65,10 +65,14 @@ const QuizPage = ({ quizData, onFinish }: { quizData: QuizQuestion[]; onFinish: 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [results, setResults] = useState<ResultDetail[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isDisabled, setIsDisabled] = useState(false); // State to disable buttons
 
   const currentQuestion = quizData[currentQuestionIndex];
 
   const handleAnswer = (choice: string) => {
+    if (isDisabled) return; // Prevent multiple clicks
+
+    setIsDisabled(true); // Disable buttons after an answer is clicked
     const isCorrect = choice === currentQuestion.correct_answer;
 
     // Add result to results array
@@ -88,6 +92,7 @@ const QuizPage = ({ quizData, onFinish }: { quizData: QuizQuestion[]; onFinish: 
 
     setTimeout(() => {
       setFeedback(null);
+      setIsDisabled(false); // Re-enable buttons for the next question
       if (currentQuestionIndex + 1 < quizData.length) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
@@ -112,7 +117,13 @@ const QuizPage = ({ quizData, onFinish }: { quizData: QuizQuestion[]; onFinish: 
           <h2>{currentQuestion.question}</h2>
           <div className="choices">
             {Object.entries(currentQuestion.choices).map(([key, value]) => (
-              <button key={key} onClick={() => handleAnswer(key)} className="choice-button">
+              // Disable button during feedback period
+              <button key={`${currentQuestionIndex}-${key}`} onClick={(e) => {
+                  handleAnswer(key);
+                  (e.target as HTMLButtonElement).blur(); // Remove focus state after tap
+                }
+              } 
+                className="choice-button" disabled={isDisabled}>
                 {key}: {value}
               </button>
             ))}
