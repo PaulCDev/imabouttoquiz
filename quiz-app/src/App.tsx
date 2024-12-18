@@ -134,13 +134,63 @@ const QuizPage = ({
 };
 
 const ResultsPage = ({ results }: { results: ResultDetail[] }) => {
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
+
   const score = results.filter((result) => result.isCorrect).length;
+
+  const shareResults = () => {
+    const emojiResults = results
+      .map((result) => (result.isCorrect ? '✅' : '❌'))
+      .join('');
+    const shareText = `I'm About To Quiz Results\nScored ${score}/${results.length}\n${emojiResults}\nimabouttoquiz.com`;
+  
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        setCopyMessage('Results copied to clipboard!');
+        setTimeout(() => setCopyMessage(null), 3000);
+      }).catch(() => {
+        fallbackCopyToClipboard(shareText);
+      });
+    } else {
+      fallbackCopyToClipboard(shareText);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+  
+    // Avoid the textarea being visible
+    textArea.style.position = 'fixed'; // Prevent scrolling to the bottom of the page
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '1px';
+    textArea.style.height = '1px';
+    textArea.style.opacity = '0';
+  
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+  
+    try {
+      document.execCommand('copy');
+      setCopyMessage('Results copied to clipboard!');
+    } catch (err) {
+      setCopyMessage('Failed to copy results to clipboard.');
+    }
+  
+    document.body.removeChild(textArea);
+    setTimeout(() => setCopyMessage(null), 3000);
+  };
+
   return (
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
         <h1 className="title">IM ABOUT TO QUIZ</h1>
         <p>You scored {score} out of {results.length}!</p>
+        <button onClick={shareResults} className="share-button">Share</button>
+        {copyMessage && <div className="copy-message">{copyMessage}</div>}
         <div className="results-summary">
           {results.map((result, index) => (
             <div key={index} className="result-item">
@@ -168,9 +218,12 @@ const App: React.FC = () => {
   const fetchQuiz = async () => {
     try {
       console.log("Fetching Quiz from server!");
-      const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz');
+      //const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz');
+      const response = await fetch('http://192.168.0.6:5000/api/quiz');
       if (!response.ok) throw new Error('Failed to fetch quiz');
       const quiz = await response.json();
+
+      console.log(quiz);
 
       const quizInfo = { quiz: quiz.quiz.slice(0, 5), date: quiz.date }; // Ensure only 5 questions are used
       localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify(quizInfo));
@@ -202,7 +255,10 @@ const App: React.FC = () => {
           setPlayStarted(true);
         }
       } else {
-        fetchQuiz();
+        localStorage.removeItem(QUIZ_STORAGE_KEY);
+        localStorage.removeItem(QUIZ_STATE_KEY);
+        setQuizData(null);
+        setPlayStarted(false);
       }
     }
   };
