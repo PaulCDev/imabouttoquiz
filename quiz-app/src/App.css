@@ -57,10 +57,10 @@ body {
   scale: 1.0;
   width: 100%;
   height: 100%;
-  opacity: 10%;
+  opacity: 20%;
   background: url('/public/Candy_Cane_Small_Tiled.png') repeat;
   background-size: 200px 200px; /* Ensure each tile matches your image size */
-  animation: pan 20s linear infinite;
+  animation: pan 50s linear infinite; /* Change animation speed to speed up or slow down scroll */
   z-index: 0;
   mix-blend-mode: overlay; /* Optional: Adjust for overlay effects */
   pointer-events: none;
@@ -71,7 +71,7 @@ body {
     background-position: 0 0;
   }
   100% {
-    background-position: 200px 0px; /* Match the gradient repeat size */
+    background-position: 400px 200px; /* Match the gradient repeat size */
   }
 }
 

@@ -1,4 +1,3 @@
-// Main React Component (App.tsx)
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
@@ -7,7 +6,7 @@ interface QuizQuestion {
   choices: { [key: string]: string };
   correct_answer: string;
   difficulty: string;
-};
+}
 
 interface ResultDetail {
   question: string;
@@ -17,6 +16,9 @@ interface ResultDetail {
   correctAnswerText: string;
   isCorrect: boolean;
 }
+
+const QUIZ_STORAGE_KEY = 'dailyQuiz';
+const QUIZ_STATE_KEY = 'quizState';
 
 const ComingSoonPage = () => {
   const text = "Coming Soon...";
@@ -38,7 +40,7 @@ const ComingSoonPage = () => {
       </div>
     </div>
   );
-}
+};
 
 const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void }) => {
   return (
@@ -49,81 +51,77 @@ const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void }) => {
         <button 
           type="button"
           className="play-button" 
-          onTouchStart={() => {
-            console.log("touched!");
-            fetchQuiz;
-          }}
           onClick={fetchQuiz}
-          >Play
+        >
+          Play
         </button>
       </div>
     </div>
   );
 };
 
-const QuizPage = ({ quizData, onFinish }: { quizData: QuizQuestion[]; onFinish: (results: ResultDetail[]) => void }) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [results, setResults] = useState<ResultDetail[]>([]);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [isDisabled, setIsDisabled] = useState(false); // State to disable buttons
-
+const QuizPage = ({
+  quizData,
+  currentQuestionIndex,
+  // @ts-ignore
+  userAnswers,
+  onAnswer,
+  onFinish,
+}: {
+  quizData: QuizQuestion[];
+  currentQuestionIndex: number;
+  userAnswers: ResultDetail[];
+  onAnswer: (result: ResultDetail, currentIndex: number) => void;
+  onFinish: () => void;
+}) => {
   const currentQuestion = quizData[currentQuestionIndex];
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   const handleAnswer = (choice: string) => {
-    if (isDisabled) return; // Prevent multiple clicks
+    if (isDisabled) return;
+    setIsDisabled(true);
 
-    setIsDisabled(true); // Disable buttons after an answer is clicked
     const isCorrect = choice === currentQuestion.correct_answer;
+    const result: ResultDetail = {
+      question: currentQuestion.question,
+      selectedAnswer: choice,
+      selectedAnswerText: currentQuestion.choices[choice],
+      correctAnswer: currentQuestion.correct_answer,
+      correctAnswerText: currentQuestion.choices[currentQuestion.correct_answer],
+      isCorrect: isCorrect,
+    };
 
-    // Add result to results array
-    setResults((prevResults) => [
-      ...prevResults,
-      {
-        question: currentQuestion.question,
-        selectedAnswer: choice,
-        selectedAnswerText: currentQuestion.choices[choice],
-        correctAnswer: currentQuestion.correct_answer,
-        correctAnswerText: currentQuestion.choices[currentQuestion.correct_answer],
-        isCorrect: isCorrect,
-      },
-    ]);
-
-    setFeedback(isCorrect ? "Correct!" : `Incorrect! The correct answer was ${currentQuestion.choices[currentQuestion.correct_answer]}.`);
-
+    setFeedback(isCorrect ? "Correct!" : `Incorrect! The correct answer was ${result.correctAnswerText}.`);
     setTimeout(() => {
       setFeedback(null);
-      setIsDisabled(false); // Re-enable buttons for the next question
-      if (currentQuestionIndex + 1 < quizData.length) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        onFinish(results.concat({
-          question: currentQuestion.question,
-          selectedAnswer: choice,
-          selectedAnswerText: currentQuestion.choices[choice],
-          correctAnswer: currentQuestion.correct_answer,
-          correctAnswerText: currentQuestion.choices[currentQuestion.correct_answer],
-          isCorrect: isCorrect,
-        }));
-      }
+      setIsDisabled(false);
+
+      onAnswer(result, currentQuestionIndex);
     }, 2000);
   };
+
+  useEffect(() => {
+    if (feedback === null && isDisabled === false && currentQuestionIndex >= quizData.length) {
+      onFinish();
+    }
+  }, [feedback, isDisabled, currentQuestionIndex, quizData.length, onFinish]);
 
   return (
     <div>
       <div className="zigzag-background"></div>
       <div className="quiz-container">
-        <h1 className="title top">Im About To Quiz</h1>
+        <h1 className="title top">IM ABOUT TO QUIZ</h1>
         <div className="question">
           <h2>{currentQuestion.question}</h2>
           <div className="choices">
             {Object.entries(currentQuestion.choices).map(([key, value]) => (
-              // Disable button during feedback period
-              <button key={`${currentQuestionIndex}-${key}`} onClick={(e) => {
-                  handleAnswer(key);
-                  (e.target as HTMLButtonElement).blur(); // Remove focus state after tap
-                }
-              } 
-                className="choice-button" disabled={isDisabled}>
+              <button
+                key={`${currentQuestionIndex}-${key}`}
+                onClick={() => handleAnswer(key)}
+                className="choice-button"
+                disabled={isDisabled}
+              >
                 {key}: {value}
               </button>
             ))}
@@ -141,7 +139,7 @@ const ResultsPage = ({ results }: { results: ResultDetail[] }) => {
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
-        <h1 className="title">Im About To Quiz Results</h1>
+        <h1 className="title">IM ABOUT TO QUIZ</h1>
         <p>You scored {score} out of {results.length}!</p>
         <div className="results-summary">
           {results.map((result, index) => (
@@ -162,53 +160,101 @@ const ResultsPage = ({ results }: { results: ResultDetail[] }) => {
 const App: React.FC = () => {
   const [isComingSoon, setIsComingSoon] = useState(true);
   const [quizData, setQuizData] = useState<QuizQuestion[] | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [userAnswers, setUserAnswers] = useState<ResultDetail[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const [results, setResults] = useState<ResultDetail[]>([]);
+  const [playStarted, setPlayStarted] = useState(false);
 
   const fetchQuiz = async () => {
     try {
-      const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz'); // Replace with actual API address
-      if (!response.ok) {
-        throw new Error('Failed to fetch quiz');
-      }
+      console.log("Fetching Quiz from server!");
+      const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz');
+      if (!response.ok) throw new Error('Failed to fetch quiz');
       const quiz = await response.json();
-      console.log('Fetched quiz:', quiz);
-      setQuizData(quiz.quiz);
-      // Here you can update state or route to the quiz page
+
+      const quizInfo = { quiz: quiz.quiz.slice(0, 5), date: quiz.date }; // Ensure only 5 questions are used
+      localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify(quizInfo));
+      setQuizData(quizInfo.quiz);
+      setCurrentQuestionIndex(0);
+      setUserAnswers([]);
+      setShowResults(false);
+      setPlayStarted(true);
     } catch (error) {
       console.error('Error fetching quiz:', error);
     }
   };
 
-  const handleFinish = (finalResults: ResultDetail[]) => {
-    setResults(finalResults);
+  const loadStoredQuiz = () => {
+    const storedQuiz = localStorage.getItem(QUIZ_STORAGE_KEY);
+    const storedState = localStorage.getItem(QUIZ_STATE_KEY);
+
+    if (storedQuiz) {
+      const { quiz, date } = JSON.parse(storedQuiz);
+      const isOutdated = new Date().toDateString() !== new Date(date).toDateString();
+
+      if (!isOutdated) {
+        setQuizData(quiz);
+        if (storedState) {
+          const { currentIndex, answers, completed } = JSON.parse(storedState);
+          setCurrentQuestionIndex(currentIndex);
+          setUserAnswers(answers);
+          setShowResults(completed);
+          setPlayStarted(true);
+        }
+      } else {
+        fetchQuiz();
+      }
+    }
+  };
+
+  const handleAnswer = (result: ResultDetail, currentIndex: number) => {
+    console.log("handle answer");
+    const updatedAnswers = [...userAnswers, result];
+    setUserAnswers(updatedAnswers);
+
+    const isLastQuestion = currentIndex + 1 >= quizData!.length;
+    if (!isLastQuestion) {
+      setCurrentQuestionIndex(currentIndex + 1);
+      localStorage.setItem(
+        QUIZ_STATE_KEY,
+        JSON.stringify({ currentIndex: currentIndex + 1, answers: updatedAnswers, completed: false })
+      );
+    } else {
+      setShowResults(true);
+    }
+    localStorage.setItem(
+      QUIZ_STATE_KEY,
+      JSON.stringify({ currentIndex: currentIndex + 1, answers: updatedAnswers, completed: isLastQuestion })
+    );
+  };
+
+  const handleFinish = () => {
+    console.log("handle finish");
     setShowResults(true);
   };
 
   useEffect(() => {
-    // Logic to determine if "Coming Soon" should be shown
-    const releaseDate = new Date('2023-12-10'); // Replace with your release date
+    console.log("Using effect...");
+    const releaseDate = new Date('2023-12-10');
     const now = new Date();
-
-    console.log(now, " ", releaseDate);
-    if (now >= releaseDate) {
-      setIsComingSoon(false);
-    }
+    if (now >= releaseDate) setIsComingSoon(false);
+    loadStoredQuiz();
   }, []);
 
-  if (isComingSoon) {
-    return <ComingSoonPage />;
-  }
+  if (isComingSoon) return <ComingSoonPage />;
+  if (!playStarted) return <PlayQuizPage fetchQuiz={fetchQuiz} />;
+  if (showResults) return <ResultsPage results={userAnswers} />;
+  if (quizData) return (
+    <QuizPage
+      quizData={quizData}
+      currentQuestionIndex={currentQuestionIndex}
+      userAnswers={userAnswers}
+      onAnswer={handleAnswer}
+      onFinish={handleFinish}
+    />
+  );
 
-  if (showResults) {
-    return <ResultsPage results={results} />;
-  }
-
-  if (quizData) {
-    return <QuizPage quizData={quizData} onFinish={handleFinish} />;
-  }
-
-  return <PlayQuizPage fetchQuiz={fetchQuiz} />;
+  return null;
 };
 
 export default App;
