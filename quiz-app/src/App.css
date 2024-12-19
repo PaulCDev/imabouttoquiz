@@ -228,11 +228,12 @@ body {
 
 .result-item hr {
   border: none;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid #000;
+  opacity: 20%;
   margin: 10px 0;
 }
 
-.share-button {
+.erahs-button {
   background-color: #ff6b68;
   border: none;
   color: white;
@@ -252,7 +253,7 @@ body {
   margin: 0 auto; /* Center horizontally */
 }
 
-.share-button:hover {
+.erahs-button:hover {
   transform: scale(1.1);
   background-color: #83D6A8;
 }

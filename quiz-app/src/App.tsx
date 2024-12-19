@@ -133,7 +133,7 @@ const QuizPage = ({
   );
 };
 
-const ResultsPage = ({ results }: { results: ResultDetail[] }) => {
+const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: number}) => {
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
 
   const score = results.filter((result) => result.isCorrect).length;
@@ -142,7 +142,7 @@ const ResultsPage = ({ results }: { results: ResultDetail[] }) => {
     const emojiResults = results
       .map((result) => (result.isCorrect ? '✅' : '❌'))
       .join('');
-    const shareText = `I'm About To Quiz Results\nScored ${score}/${results.length}\n${emojiResults}\nimabouttoquiz.com`;
+    const shareText = `I'm About To Quiz #${quizNo}\nScored ${score}/${results.length}\n${emojiResults}\nimabouttoquiz.com`;
   
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareText).then(() => {
@@ -189,7 +189,7 @@ const ResultsPage = ({ results }: { results: ResultDetail[] }) => {
       <div className="container">
         <h1 className="title">IM ABOUT TO QUIZ</h1>
         <p>You scored {score} out of {results.length}!</p>
-        <button onClick={shareResults} className="share-button">Share</button>
+        <button onClick={shareResults} className="erahs-button">Share</button>
         {copyMessage && <div className="copy-message">{copyMessage}</div>}
         <div className="results-summary">
           {results.map((result, index) => (
@@ -214,12 +214,13 @@ const App: React.FC = () => {
   const [userAnswers, setUserAnswers] = useState<ResultDetail[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [playStarted, setPlayStarted] = useState(false);
+  const [quizNo, setQuizNo] = useState<number>(0);
 
   const fetchQuiz = async () => {
     try {
       console.log("Fetching Quiz from server!");
-      //const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz');
-      const response = await fetch('http://192.168.0.6:5000/api/quiz');
+      const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz');
+      //const response = await fetch('http://192.168.0.6:5000/api/quiz');
       if (!response.ok) throw new Error('Failed to fetch quiz');
       const quiz = await response.json();
 
@@ -229,6 +230,7 @@ const App: React.FC = () => {
       localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify(quizInfo));
       setQuizData(quizInfo.quiz);
       setCurrentQuestionIndex(0);
+      setQuizNo(quiz.quizNo);
       setUserAnswers([]);
       setShowResults(false);
       setPlayStarted(true);
@@ -299,7 +301,7 @@ const App: React.FC = () => {
 
   if (isComingSoon) return <ComingSoonPage />;
   if (!playStarted) return <PlayQuizPage fetchQuiz={fetchQuiz} />;
-  if (showResults) return <ResultsPage results={userAnswers} />;
+  if (showResults) return <ResultsPage results={userAnswers} quizNo={quizNo}/>;
   if (quizData) return (
     <QuizPage
       quizData={quizData}
