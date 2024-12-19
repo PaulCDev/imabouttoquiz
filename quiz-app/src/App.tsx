@@ -226,11 +226,11 @@ const App: React.FC = () => {
 
       console.log(quiz);
 
-      const quizInfo = { quiz: quiz.quiz.slice(0, 5), date: quiz.date }; // Ensure only 5 questions are used
+      const quizInfo = { quiz: quiz.quiz.slice(0, 5), date: quiz.date, quizNo: quiz.quizNo }; // Ensure only 5 questions are used
       localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify(quizInfo));
       setQuizData(quizInfo.quiz);
       setCurrentQuestionIndex(0);
-      setQuizNo(quiz.quizNo);
+      setQuizNo(quizInfo.quizNo);
       setUserAnswers([]);
       setShowResults(false);
       setPlayStarted(true);
@@ -244,11 +244,13 @@ const App: React.FC = () => {
     const storedState = localStorage.getItem(QUIZ_STATE_KEY);
 
     if (storedQuiz) {
-      const { quiz, date } = JSON.parse(storedQuiz);
+      const { quiz, date, quizNo } = JSON.parse(storedQuiz);
       const isOutdated = new Date().toDateString() !== new Date(date).toDateString();
 
       if (!isOutdated) {
         setQuizData(quiz);
+        console.log(quizNo);
+        setQuizNo(quizNo);
         if (storedState) {
           const { currentIndex, answers, completed } = JSON.parse(storedState);
           setCurrentQuestionIndex(currentIndex);
