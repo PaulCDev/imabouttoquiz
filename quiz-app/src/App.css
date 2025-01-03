@@ -258,3 +258,28 @@ body {
   transform: scale(1.1);
   background-color: #83D6A8;
 }
+
+.progress-bar-container {
+  width: 100%;
+  height: 20px; /* Thicker bar */
+  background-color: #f0f0f0; /* Light gray background */
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #9370db; /* Medium purple for progress */
+  position: relative;
+  transition: width 0.3s ease-in-out;
+}
+
+.progress-text {
+  position: absolute;
+  right: 5px; /* Offset text slightly inside the progress part */
+  color: white; /* Contrast against purple bar */
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 20px; /* Matches the height of the bar */
+}

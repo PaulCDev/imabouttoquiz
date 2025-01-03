@@ -78,6 +78,8 @@ const QuizPage = ({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isDisabled, setIsDisabled] = useState(false);
 
+  const progressPercentage = ((currentQuestionIndex + 1) / quizData.length) * 100;
+
   const handleAnswer = (choice: string) => {
     if (isDisabled) return;
     setIsDisabled(true);
@@ -112,6 +114,13 @@ const QuizPage = ({
       <div className="zigzag-background"></div>
       <div className="quiz-container">
         <h1 className="title top">IM ABOUT TO QUIZ</h1>
+
+        <div className="progress-bar-container">
+          <div className="progress-bar" style={{ width: `${progressPercentage}%`, position: 'relative' }}>
+            <span className="progress-text">Q{currentQuestionIndex + 1}</span>
+          </div>
+        </div>
+
         <div className="question">
           <h2>{currentQuestion.question}</h2>
           <div className="choices">
