@@ -42,12 +42,13 @@ const ComingSoonPage = () => {
   );
 };
 
-const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void }) => {
+const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void; }) => {
   return (
     <div>
       <div className="zigzag-background"></div>
       <div className="centered-container">
         <h1 className="title">IM ABOUT TO QUIZ</h1>
+        <h2 className="sub-title">The Ultimate Daily Quiz Challenge!</h2>
         <button 
           type="button"
           className="play-button" 
@@ -62,6 +63,7 @@ const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void }) => {
 
 const QuizPage = ({
   quizData,
+  quizNo,
   currentQuestionIndex,
   // @ts-ignore
   userAnswers,
@@ -69,6 +71,7 @@ const QuizPage = ({
   onFinish,
 }: {
   quizData: QuizQuestion[];
+  quizNo: number;
   currentQuestionIndex: number;
   userAnswers: ResultDetail[];
   onAnswer: (result: ResultDetail, currentIndex: number) => void;
@@ -100,7 +103,7 @@ const QuizPage = ({
       setIsDisabled(false);
 
       onAnswer(result, currentQuestionIndex);
-    }, 2000);
+    }, 1000);
   };
 
   useEffect(() => {
@@ -113,7 +116,7 @@ const QuizPage = ({
     <div>
       <div className="zigzag-background"></div>
       <div className="quiz-container">
-        <h1 className="title top">IM ABOUT TO QUIZ</h1>
+        <h1 className="title top">IM ABOUT TO QUIZ {quizNo}</h1>
 
         <div className="progress-bar-container">
           <div className="progress-bar" style={{ width: `${progressPercentage}%`, position: 'relative' }}>
@@ -151,7 +154,7 @@ const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: num
     const emojiResults = results
       .map((result) => (result.isCorrect ? '✅' : '❌'))
       .join('');
-    const shareText = `I'm About To Quiz #${quizNo}\nScored ${score}/${results.length}\n${emojiResults}\nimabouttoquiz.com`;
+    const shareText = `I'm About To Quiz ${quizNo}\nScored ${score}/${results.length}\n${emojiResults}\nimabouttoquiz.com`;
   
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareText).then(() => {
@@ -196,7 +199,7 @@ const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: num
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
-        <h1 className="title">IM ABOUT TO QUIZ</h1>
+        <h1 className="title">IM ABOUT TO QUIZ {quizNo}</h1>
         <p>You scored {score} out of {results.length}!</p>
         <button onClick={shareResults} className="erahs-button">Share</button>
         {copyMessage && <div className="copy-message">{copyMessage}</div>}
@@ -316,6 +319,7 @@ const App: React.FC = () => {
   if (quizData) return (
     <QuizPage
       quizData={quizData}
+      quizNo={quizNo}
       currentQuestionIndex={currentQuestionIndex}
       userAnswers={userAnswers}
       onAnswer={handleAnswer}
