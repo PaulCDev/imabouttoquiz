@@ -271,6 +271,23 @@ body {
   background-color: #83D6A8;
 }
 
+.erahs-facebook-button {
+  background-color: #1877f2; /* Facebook blue */
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.erahs-facebook-button:hover {
+  background-color: #145dbf; /* Darker Facebook blue */
+}
+
 .progress-bar-container {
   width: 100%;
   height: 20px; /* Thicker bar */

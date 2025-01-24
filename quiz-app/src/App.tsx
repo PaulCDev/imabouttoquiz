@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 interface QuizQuestion {
-  question: string;
-  choices: { [key: string]: string };
-  correct_answer: string;
+  text: string;
+  options: string[];
+  correct_option: number;
   difficulty: string;
+  categories: string[];
 }
 
 interface ResultDetail {
@@ -15,32 +16,12 @@ interface ResultDetail {
   correctAnswer: string;
   correctAnswerText: string;
   isCorrect: boolean;
+  difficulty: string;
+  categories: string[];
 }
 
 const QUIZ_STORAGE_KEY = 'dailyQuiz';
 const QUIZ_STATE_KEY = 'quizState';
-
-const ComingSoonPage = () => {
-  const text = "Coming Soon...";
-  return (
-    <div>
-      <div className="zigzag-background"></div>
-      <div className="container">
-        <h1 className="title">IM ABOUT TO QUIZ</h1>
-        <div className="animated-text">
-          {text.split('').map((char, index) => (
-            <span
-              key={index}
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              {char === ' ' ? '\u00A0' : char}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void; }) => {
   return (
@@ -49,11 +30,7 @@ const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void; }) => {
       <div className="centered-container">
         <h1 className="title">IM ABOUT TO QUIZ</h1>
         <h2 className="sub-title">The Ultimate Daily Quiz Challenge!</h2>
-        <button 
-          type="button"
-          className="play-button" 
-          onClick={fetchQuiz}
-        >
+        <button type="button" className="play-button" onClick={fetchQuiz}>
           Play
         </button>
       </div>
@@ -61,62 +38,59 @@ const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void; }) => {
   );
 };
 
-const QuizPage = ({
-  quizData,
-  quizNo,
-  currentQuestionIndex,
-  // @ts-ignore
-  userAnswers,
-  onAnswer,
-  onFinish,
-}: {
+// @ts-ignore
+const QuizPage = ({quizData,quizNo,currentQuestionIndex,userAnswers,onAnswer,onFinish,}: {
   quizData: QuizQuestion[];
   quizNo: number;
   currentQuestionIndex: number;
   userAnswers: ResultDetail[];
   onAnswer: (result: ResultDetail, currentIndex: number) => void;
   onFinish: () => void;
-}) => {
-  const currentQuestion = quizData[currentQuestionIndex];
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [isDisabled, setIsDisabled] = useState(false);
+  }) => {
+    const currentQuestion = quizData[currentQuestionIndex];
+    const [feedback, setFeedback] = useState<string | null>(null);
+    const [isDisabled, setIsDisabled] = useState(false);
 
-  const progressPercentage = ((currentQuestionIndex + 1) / quizData.length) * 100;
+    const progressPercentage = ((currentQuestionIndex + 1) / quizData.length) * 100;
 
-  const handleAnswer = (choice: string) => {
-    if (isDisabled) return;
-    setIsDisabled(true);
+    const handleAnswer = (choiceIndex: number) => {
+      if (isDisabled) return;
+      setIsDisabled(true);
 
-    const isCorrect = choice === currentQuestion.correct_answer;
-    const result: ResultDetail = {
-      question: currentQuestion.question,
-      selectedAnswer: choice,
-      selectedAnswerText: currentQuestion.choices[choice],
-      correctAnswer: currentQuestion.correct_answer,
-      correctAnswerText: currentQuestion.choices[currentQuestion.correct_answer],
-      isCorrect: isCorrect,
+      const isCorrect = choiceIndex === currentQuestion.correct_option;
+      const result: ResultDetail = {
+        question: currentQuestion.text,
+        //selectedAnswer: choiceIndex.toString(),                                       // Gives question index as a number
+        selectedAnswer: String.fromCharCode(65 + choiceIndex),                          // Gives question index as a letter
+        selectedAnswerText: currentQuestion.options[choiceIndex],
+        //correctAnswer: currentQuestion.correct_option.toString(),                     // Gives question index as a number
+        correctAnswer: String.fromCharCode(65 + currentQuestion.correct_option),        // Gives question index as a letter
+        correctAnswerText: currentQuestion.options[currentQuestion.correct_option],
+        isCorrect: isCorrect,
+        difficulty: currentQuestion.difficulty,
+        categories: currentQuestion.categories,
+      };
+
+      setFeedback(isCorrect ? "Correct!" : `Incorrect! The correct answer was ${result.correctAnswerText}.`);
+      setTimeout(() => {
+        setFeedback(null);
+        setIsDisabled(false);
+
+        onAnswer(result, currentQuestionIndex);
+      }, 1000);
     };
 
-    setFeedback(isCorrect ? "Correct!" : `Incorrect! The correct answer was ${result.correctAnswerText}.`);
-    setTimeout(() => {
-      setFeedback(null);
-      setIsDisabled(false);
-
-      onAnswer(result, currentQuestionIndex);
-    }, 1000);
-  };
-
-  useEffect(() => {
-    if (feedback === null && isDisabled === false && currentQuestionIndex >= quizData.length) {
-      onFinish();
-    }
+    useEffect(() => {
+      if (feedback === null && isDisabled === false && currentQuestionIndex >= quizData.length) {
+        onFinish();
+      }
   }, [feedback, isDisabled, currentQuestionIndex, quizData.length, onFinish]);
 
   return (
     <div>
       <div className="zigzag-background"></div>
       <div className="quiz-container">
-        <h1 className="title top">IM ABOUT TO QUIZ {quizNo}</h1>
+        <h1 className="title top">IM ABOUT TO QUIZ - {quizNo}</h1>
 
         <div className="progress-bar-container">
           <div className="progress-bar" style={{ width: `${progressPercentage}%`, position: 'relative' }}>
@@ -125,16 +99,11 @@ const QuizPage = ({
         </div>
 
         <div className="question">
-          <h2>{currentQuestion.question}</h2>
+          <h2>{currentQuestion.text}</h2>
           <div className="choices">
-            {Object.entries(currentQuestion.choices).map(([key, value]) => (
-              <button
-                key={`${currentQuestionIndex}-${key}`}
-                onClick={() => handleAnswer(key)}
-                className="choice-button"
-                disabled={isDisabled}
-              >
-                {key}: {value}
+            {currentQuestion.options.map((option, index) => (
+              <button key={`${currentQuestionIndex}-${index}`} onClick={() => handleAnswer(index)} className="choice-button" disabled={isDisabled}>
+                {String.fromCharCode(65 + index)}: {option}
               </button>
             ))}
           </div>
@@ -150,11 +119,11 @@ const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: num
 
   const score = results.filter((result) => result.isCorrect).length;
 
-  const shareResults = () => {
+  const shareResultsToClipboard = () => {
     const emojiResults = results
       .map((result) => (result.isCorrect ? '✅' : '❌'))
       .join('');
-    const shareText = `I'm About To Quiz ${quizNo}\nScored ${score}/${results.length}\n${emojiResults}\nimabouttoquiz.com`;
+    const shareText = `I'm About To Quiz #${quizNo}\nScored ${score}/${results.length}\n${emojiResults}\nhttps://www.imabouttoquiz.com`;
   
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareText).then(() => {
@@ -167,6 +136,18 @@ const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: num
       fallbackCopyToClipboard(shareText);
     }
   };
+
+  /*const shareResultsOnFacebook = () => {
+    const score = results.filter((result) => result.isCorrect).length;
+    const emojiResults = results.map((result) => (result.isCorrect ? '✅' : '❌')).join('');
+    const shareText = `I'm About To Quiz #${quizNo}\nScored ${score}/${results.length}\n${emojiResults}`;
+  
+    const facebookFeedUrl = `https://www.facebook.com/dialog/feed?app_id=522572457492634&display=popup&link=https://imabouttoquiz.com&caption=${encodeURIComponent(
+      'Check out my score!'
+    )}&description=${encodeURIComponent(shareText)}&redirect_uri=https://imabouttoquiz.com`;
+  
+    window.open(facebookFeedUrl, '_blank', 'width=600,height=400');
+  };*/
 
   const fallbackCopyToClipboard = (text: string) => {
     const textArea = document.createElement('textarea');
@@ -199,9 +180,9 @@ const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: num
     <div>
       <div className="zigzag-background"></div>
       <div className="container">
-        <h1 className="title">IM ABOUT TO QUIZ {quizNo}</h1>
+        <h1 className="title">IM ABOUT TO QUIZ - {quizNo}</h1>
         <p>You scored {score} out of {results.length}!</p>
-        <button onClick={shareResults} className="erahs-button">Share</button>
+        <button onClick={shareResultsToClipboard} className="erahs-button">Share</button>
         {copyMessage && <div className="copy-message">{copyMessage}</div>}
         <div className="results-summary">
           {results.map((result, index) => (
@@ -209,6 +190,7 @@ const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: num
               <p><strong>Question:</strong> {result.question}</p>
               <p><strong>Your Answer:</strong> {result.selectedAnswer} - {result.selectedAnswerText}</p>
               <p><strong>Correct Answer:</strong> {result.correctAnswer} - {result.correctAnswerText}</p>
+              <p><strong>Categories:</strong> {result.categories.join(', ')}</p>
               <p><strong>Result:</strong> {result.isCorrect ? "Correct" : "Incorrect"}</p>
               <hr />
             </div>
@@ -220,7 +202,6 @@ const ResultsPage = ({ results, quizNo }: { results: ResultDetail[], quizNo: num
 };
 
 const App: React.FC = () => {
-  const [isComingSoon, setIsComingSoon] = useState(true);
   const [quizData, setQuizData] = useState<QuizQuestion[] | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [userAnswers, setUserAnswers] = useState<ResultDetail[]>([]);
@@ -238,49 +219,28 @@ const App: React.FC = () => {
 
       console.log(quiz);
 
-      const quizInfo = { quiz: quiz.quiz.slice(0, 5), date: quiz.date, quizNo: quiz.quizNo }; // Ensure only 5 questions are used
-      localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify(quizInfo));
-      setQuizData(quizInfo.quiz);
+      const quizData = quiz.questions.map((question: any) => ({
+        text: question.text,
+        options: question.options,
+        correct_option: question.correct_option,
+        difficulty: question.difficulty,
+        categories: question.categories,
+      }));
+
+      localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify({ quizData, date: quiz.scheduled_date, quizNo: quiz.id }));
+      setQuizData(quizData);
       setCurrentQuestionIndex(0);
-      setQuizNo(quizInfo.quizNo);
+      setQuizNo(quiz.id);
       setUserAnswers([]);
       setShowResults(false);
       setPlayStarted(true);
+
     } catch (error) {
       console.error('Error fetching quiz:', error);
     }
   };
 
-  const loadStoredQuiz = () => {
-    const storedQuiz = localStorage.getItem(QUIZ_STORAGE_KEY);
-    const storedState = localStorage.getItem(QUIZ_STATE_KEY);
-
-    if (storedQuiz) {
-      const { quiz, date, quizNo } = JSON.parse(storedQuiz);
-      const isOutdated = new Date().toDateString() !== new Date(date).toDateString();
-
-      if (!isOutdated) {
-        setQuizData(quiz);
-        console.log(quizNo);
-        setQuizNo(quizNo);
-        if (storedState) {
-          const { currentIndex, answers, completed } = JSON.parse(storedState);
-          setCurrentQuestionIndex(currentIndex);
-          setUserAnswers(answers);
-          setShowResults(completed);
-          setPlayStarted(true);
-        }
-      } else {
-        localStorage.removeItem(QUIZ_STORAGE_KEY);
-        localStorage.removeItem(QUIZ_STATE_KEY);
-        setQuizData(null);
-        setPlayStarted(false);
-      }
-    }
-  };
-
   const handleAnswer = (result: ResultDetail, currentIndex: number) => {
-    console.log("handle answer");
     const updatedAnswers = [...userAnswers, result];
     setUserAnswers(updatedAnswers);
 
@@ -301,19 +261,35 @@ const App: React.FC = () => {
   };
 
   const handleFinish = () => {
-    console.log("handle finish");
     setShowResults(true);
   };
 
   useEffect(() => {
-    console.log("Using effect...");
-    const releaseDate = new Date('2023-12-10');
-    const now = new Date();
-    if (now >= releaseDate) setIsComingSoon(false);
-    loadStoredQuiz();
+    const storedQuiz = localStorage.getItem(QUIZ_STORAGE_KEY);
+    const storedState = localStorage.getItem(QUIZ_STATE_KEY);
+
+    if (storedQuiz) {
+      const { quizData, date, quizNo } = JSON.parse(storedQuiz);
+      //console.log("stored quiz date: ",new Date(date).toDateString()," | current date: ", new Date().toDateString());
+      const isOutdated = new Date().toDateString() !== new Date(date).toDateString();
+
+      if (!isOutdated) {
+        setQuizData(quizData);
+        setQuizNo(quizNo);
+        if (storedState) {
+          const { currentIndex, answers, completed } = JSON.parse(storedState);
+          setCurrentQuestionIndex(currentIndex);
+          setUserAnswers(answers);
+          setShowResults(completed);
+          setPlayStarted(true);
+        }
+      } else {
+        localStorage.removeItem(QUIZ_STORAGE_KEY);
+        localStorage.removeItem(QUIZ_STATE_KEY);
+      }
+    }
   }, []);
 
-  if (isComingSoon) return <ComingSoonPage />;
   if (!playStarted) return <PlayQuizPage fetchQuiz={fetchQuiz} />;
   if (showResults) return <ResultsPage results={userAnswers} quizNo={quizNo}/>;
   if (quizData) return (
