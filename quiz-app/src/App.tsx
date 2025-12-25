@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+let devMode = true;
+let api_url = "http://192.168.0.6:5000"
+if(!devMode){
+  api_url = "https://monkfish-app-6xb33.ondigitalocean.app"
+}
+
 interface QuizQuestion {
   text: string;
   options: string[];
   correct_option: number;
   difficulty: string;
   categories: string[];
+  id: number;
 }
 
 interface ResultDetail {
@@ -18,10 +25,12 @@ interface ResultDetail {
   isCorrect: boolean;
   difficulty: string;
   categories: string[];
+  id: number;
 }
 
 const QUIZ_STORAGE_KEY = 'dailyQuiz';
 const QUIZ_STATE_KEY = 'quizState';
+const SESSION_KEY = 'sessionId';
 
 const PlayQuizPage = ({ fetchQuiz }: { fetchQuiz: () => void; }) => {
   return (
@@ -69,6 +78,7 @@ const QuizPage = ({quizData,quizNo,currentQuestionIndex,userAnswers,onAnswer,onF
         isCorrect: isCorrect,
         difficulty: currentQuestion.difficulty,
         categories: currentQuestion.categories,
+        id: currentQuestion.id,
       };
 
       setFeedback(isCorrect ? "Correct!" : `Incorrect! The correct answer was ${result.correctAnswerText}.`);
@@ -211,9 +221,35 @@ const App: React.FC = () => {
 
   const fetchQuiz = async () => {
     try {
+      let sessionId = localStorage.getItem(SESSION_KEY);
+
+      // Check sessionID with the server
+      const sessionResponse = await fetch(api_url + '/api/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: sessionId})
+      });
+
+      if (!sessionResponse.ok) throw new Error('Failed to validate or create session');
+      const sessionData = await sessionResponse.json();
+      sessionId = sessionData.session_id;
+      if (sessionId) {
+        localStorage.setItem(SESSION_KEY, sessionId);
+      } else {
+        throw new Error('Session ID is invalid');
+      }
+
+      // Get quiz from server
       console.log("Fetching Quiz from server!");
-      const response = await fetch('https://monkfish-app-6xb33.ondigitalocean.app/api/quiz');
-      //const response = await fetch('http://192.168.0.6:5000/api/quiz');
+      const response = await fetch(api_url + '/api/quiz', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionId}`
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch quiz');
       const quiz = await response.json();
 
@@ -221,6 +257,7 @@ const App: React.FC = () => {
 
       const quizData = quiz.questions.map((question: any) => ({
         text: question.text,
+        id: question.id,
         options: question.options,
         correct_option: question.correct_option,
         difficulty: question.difficulty,
@@ -243,6 +280,34 @@ const App: React.FC = () => {
   const handleAnswer = (result: ResultDetail, currentIndex: number) => {
     const updatedAnswers = [...userAnswers, result];
     setUserAnswers(updatedAnswers);
+
+    // Upload the current answer to the backend
+    try {
+      const sessionId = localStorage.getItem(SESSION_KEY); // Retrieve the session ID from local storage
+      if (!sessionId) {
+        throw new Error('Session ID not found');
+      }
+
+      const answerPayload = {
+        session_id: sessionId,
+        answers: [
+          {
+            question_id: quizData![currentIndex].id,
+            answer_text: result.selectedAnswer, // Sending the selected answer text
+          },
+        ],
+      };
+
+      fetch(api_url + '/api/answers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(answerPayload),
+      });
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+    }
 
     const isLastQuestion = currentIndex + 1 >= quizData!.length;
     if (!isLastQuestion) {
